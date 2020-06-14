@@ -1,64 +1,97 @@
-import React, { useState } from "react";
-import Highcharts from 'highcharts'
-import HighchartsReact from 'highcharts-react-official'
-import timeSeries from '../../tmp/data';
+import React, { useState, useRef } from "react";
+import Highcharts from 'highcharts/highstock';
+import HighchartsReact from 'highcharts-react-official';
 import Styles from "../Styles";
+import { 
+  Button,
+  TextField,
+} from "@material-ui/core";
+import { get } from "../apiRequest";
 
-const setPrev = (first, last) => {
-  const timeSeriesValues = [];
-
-  for(let i = first; i <= last; i++) {
-    timeSeriesValues.push(timeSeries[i]);
-  }
-
-  return timeSeriesValues;
-}
+const requestDefaultValues = async () => await get("/chart");
+const requestExtrems = async () => await get("/chart/extrems");
 
 const Chart = () => {
+  const classes = Styles();
+  const highchartsInstance = useRef(null);
 
-  const [ data, setData ] = useState(timeSeries);
-  const [ first, setFirst ] = useState(0);
-  const [ last, setLast ] = useState(100)
+  const [ data, setData ] = useState([]);
+  const [ min, setMin ] = useState(0);
+  const [ max, setMax ] = useState(0);
 
-  const hanldePrevValues = () => {
-    setData(setPrev(first, last));
-    setFirst(first-100);
-    setLast(last-100);
+  const handleBuild = async () => {
+    const { data } = await requestDefaultValues();
+    setData([
+      {data},
+    ]);
   };
 
-  const hanldeNextValues = () => {
-    setData(setPrev(first, last));
-    setFirst(first+100);
-    setLast(last+100);
-    return;
-  };
+  const handleShow = async () => {
+    const {
+      data,
+      minValue,
+      maxValue
+    } = await requestExtrems();
 
-  const handleSetAllData = () => setData(timeSeries);
-
-  const handleStartAnimation = async () => {
-    while (last !== timeSeries.length) {
-      console.log(last);
-      await setTimeout(hanldeNextValues(), 1000);
-    }
+    setMin(minValue);
+    setMax(maxValue);
+    setData([{ data }]);
   };
 
   const options = {
+    yAxis: {
+      floor: 0,
+      ceiling: 100,
+      title: {
+          text: 'Values'
+      }
+    },
+    xAxis: {
+      labels: {
+          format: '{value}'
+      }
+    },
     title: {
       text: 'Time Series'
     },
-    series: [{
-      data: data
-    }]};
+    series: data
+  };
+
   return (
     <div>
-    <HighchartsReact
-      highcharts={Highcharts}
-      options={options}
-    />
-    <button onClick={hanldePrevValues}>clickPrev</button>
-    <button onClick={hanldeNextValues}>clickNext</button>
-    <button onClick={handleSetAllData}>Show All Chart</button>
-    <button onClick={handleStartAnimation}>Start Animation</button>
+      <div
+        className={classes.block}
+      >
+        <HighchartsReact
+          highcharts={Highcharts}
+          options={options}
+          constructorType="stockChart"
+          ref={highchartsInstance}
+        />
+      </div>
+    
+    <div className={classes.showBlock}>
+      <TextField
+        className={classes.min}
+        label="MIN"
+        value={min}
+        InputProps={{
+          readOnly: true,
+        }}
+      />
+      <TextField
+        className={classes.max}
+        label="MAX"
+        value={max}
+        InputProps={{
+          readOnly: true,
+        }}
+      /><br/><br/>
+      <center>
+        <Button variant="contained" color="primary" onClick={handleBuild}>Build</Button><br/><br/>
+        <Button variant="contained" color="primary" onClick={handleShow}>Show extrems</Button>
+      </center>
+    </div>
   </div>
   )
 };

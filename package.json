@@ -10,7 +10,7 @@
     "@testing-library/user-event": "^7.2.1",
     "canvasjs": "^1.8.3",
     "deepcopy": "^2.0.0",
-    "highcharts": "^8.0.4",
+    "highcharts": "^9.0.0",
     "highcharts-react-official": "^3.0.0",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
